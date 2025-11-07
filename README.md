@@ -44,6 +44,18 @@ uv run python run_tray.py
 The "M" icon will appear in your menu bar for quick profile switching!
 See [docs/QUICKSTART_TRAY.md](docs/QUICKSTART_TRAY.md) for detailed setup and usage instructions.
 
+### Auto-Start on Login
+```bash
+# Install auto-start on login
+./install_autostart.sh
+
+# Uninstall auto-start
+./uninstall_autostart.sh
+```
+
+The tray app will automatically start when you log in, with USB monitoring enabled!
+See [docs/AUTOSTART.md](docs/AUTOSTART.md) for detailed setup, troubleshooting, and log locations.
+
 ## Usage
 
 ### List Connected Monitors
@@ -263,12 +275,16 @@ monitor-watcher/
 │   ├── TRAY_SETUP.md        # Detailed tray app setup
 │   ├── TRAY_DESIGN.md       # Tray app design document
 │   ├── USB_MONITORING.md    # USB auto-switch setup guide
+│   ├── AUTOSTART.md         # Auto-start on login setup
 │   └── APP_BUNDLE.md        # Building standalone .app
-├── run_cli.py              # Convenience CLI runner
-├── run_tray.py             # Convenience tray app runner
-├── pyproject.toml          # Project configuration
-├── setup.py                # py2app build configuration (legacy)
-└── README.md               # This file
+├── run_cli.py               # Convenience CLI runner
+├── run_tray.py              # Convenience tray app runner
+├── install_autostart.sh     # Install auto-start on login
+├── uninstall_autostart.sh   # Uninstall auto-start
+├── com.monitor-watcher.app.plist  # LaunchAgent configuration
+├── pyproject.toml           # Project configuration
+├── setup.py                 # py2app build configuration (legacy)
+└── README.md                # This file
 ```
 
 For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -279,6 +295,7 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 ✅ **Menu Bar App** - One-click profile switching with "M" icon
 ✅ **Profile Management** - Save and switch between monitor configurations
 ✅ **USB Auto-Switch** - Automatically switch profiles when USB devices connect
+✅ **Auto-Start on Login** - Tray app starts automatically with macOS LaunchAgent
 ✅ **Input Checking** - Skips unnecessary switches (no screen blackouts!)
 ✅ **Dry Run Mode** - Test configurations safely
 ✅ **Interactive Wizard** - Easy profile creation
