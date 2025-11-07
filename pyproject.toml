@@ -1,0 +1,21 @@
+[project]
+name = "monitor-watcher"
+version = "0.1.0"
+description = "Monitor input switcher with profile support"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1.7",
+]
+
+[project.scripts]
+monitor-watcher = "src.main:main"
+monitor-tray = "src.tray:main"
+
+[project.optional-dependencies]
+tray = [
+    "rumps>=0.4.0",  # macOS menu bar app support
+]
+build = [
+    "py2app>=0.28.0",  # Build standalone .app bundle
+]
