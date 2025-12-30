@@ -1,7 +1,7 @@
 [project]
 name = "monitor-watcher"
 version = "0.1.0"
-description = "Monitor input switcher with profile support"
+description = "Cross-platform monitor input switcher with profile support"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -10,12 +10,35 @@ dependencies = [
 
 [project.scripts]
 monitor-watcher = "src.main:main"
-monitor-tray = "src.tray:main"
 
 [project.optional-dependencies]
+# macOS-specific dependencies
+macos = [
+    "rumps>=0.4.0",  # macOS menu bar app support (tray icon)
+    "py2app>=0.28.0",  # Build standalone .app bundle
+]
+
+# Windows/Linux-specific dependencies
+windows = [
+    "monitorcontrol>=4.1.0",  # DDC/CI monitor control for Windows/Linux
+    "wmi>=1.5.1; sys_platform == 'win32'",  # Windows USB device monitoring
+    "pystray>=0.19.0",  # Cross-platform system tray support
+    "pillow>=10.0.0",  # Required for pystray icons
+]
+
+# Linux-specific dependencies
+linux = [
+    "monitorcontrol>=4.1.0",  # DDC/CI monitor control for Linux
+    "pystray>=0.19.0",  # Cross-platform system tray support
+    "pillow>=10.0.0",  # Required for pystray icons
+]
+
+# Legacy tray app (macOS only - for backwards compatibility)
 tray = [
     "rumps>=0.4.0",  # macOS menu bar app support
 ]
+
+# Legacy build (macOS only - for backwards compatibility)
 build = [
     "py2app>=0.28.0",  # Build standalone .app bundle
 ]

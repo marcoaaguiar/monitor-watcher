@@ -1,12 +1,33 @@
 """System tray menu bar application for monitor switching."""
 
 import json
+import sys
+import traceback
+from datetime import datetime
+from pathlib import Path
+
 import rumps
 
 from constants import INPUT_MAP, DEFAULT_CONFIG_PATH, USB_CONFIG_PATH
 from controllers import M1DDCController, DisplayController
 from profile_manager import ProfileManager
-from usb_monitor import USBMonitor
+from usb_monitor import create_usb_monitor
+
+# Log file for tray app
+LOG_FILE = Path.home() / ".config" / "monitor-watcher" / "tray_app.log"
+
+
+def _log(message: str) -> None:
+    """Write a timestamped log message."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_message = f"[{timestamp}] {message}"
+    print(log_message, file=sys.stderr)
+    try:
+        LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOG_FILE, "a") as f:
+            f.write(log_message + "\n")
+    except Exception:
+        pass
 
 
 class MonitorWatcherApp(rumps.App):
@@ -25,9 +46,12 @@ class MonitorWatcherApp(rumps.App):
         self.current_profile: str | None = None
 
         # USB monitoring
-        self.usb_monitor = USBMonitor(on_connect=self._on_usb_connect)
+        self.usb_monitor = create_usb_monitor(on_connect=self._on_usb_connect)
         self.usb_config = self._load_usb_config()
         self.usb_monitoring_enabled = self.usb_config.get("enabled", False)
+
+        # Flag for thread-safe menu rebuild
+        self._needs_menu_rebuild = False
 
         # Start USB monitoring if enabled
         if self.usb_monitoring_enabled:
@@ -39,25 +63,40 @@ class MonitorWatcherApp(rumps.App):
 
         self._build_menu()
 
+        # Timer to check for pending menu rebuilds (runs on main thread)
+        self._rebuild_timer = rumps.Timer(self._check_rebuild_menu, 1)
+        self._rebuild_timer.start()
+
+    def _check_rebuild_menu(self, _: rumps.Timer) -> None:
+        """Check if menu needs rebuilding (called from main thread via timer)."""
+        if self._needs_menu_rebuild:
+            self._needs_menu_rebuild = False
+            self._build_menu()
+
     def _build_menu(self) -> None:
         """Build the menu structure."""
-        # Clear existing menu items
-        self.menu.clear()
+        try:
+            _log("Building menu...")
+            # Clear existing menu items
+            self.menu.clear()
 
-        # Add profiles section
-        self._add_profiles_menu()
+            # Add profiles section
+            self._add_profiles_menu()
 
-        # Add separator
-        self.menu.add(rumps.separator)
+            # Add separator
+            self.menu.add(rumps.separator)
 
-        # Add quick switch section
-        self._add_quick_switch_menu()
+            # Add quick switch section
+            self._add_quick_switch_menu()
 
-        # Add separator
-        self.menu.add(rumps.separator)
+            # Add separator
+            self.menu.add(rumps.separator)
 
-        # Add USB monitoring section
-        self._add_usb_monitoring_menu()
+            # Add USB monitoring section
+            self._add_usb_monitoring_menu()
+        except Exception as e:
+            _log(f"ERROR building menu: {e}")
+            _log(traceback.format_exc())
 
         # Add separator
         self.menu.add(rumps.separator)
@@ -65,6 +104,12 @@ class MonitorWatcherApp(rumps.App):
         # Add utility items
         self.menu.add(rumps.MenuItem("Refresh Monitors", callback=self.refresh_monitors))
         self.menu.add(rumps.MenuItem("Open Config", callback=self.open_config))
+
+        # Add separator before quit
+        self.menu.add(rumps.separator)
+
+        # Re-add the Quit button (gets cleared by menu.clear())
+        self.menu.add(rumps.MenuItem("Quit", callback=rumps.quit_application))
 
     def _add_profiles_menu(self) -> None:
         """Add profiles submenu."""
@@ -347,8 +392,8 @@ class MonitorWatcherApp(rumps.App):
             except Exception:
                 pass
 
-            # Rebuild menu to update checkmarks
-            self._build_menu()
+            # Schedule menu rebuild on main thread (thread-safe)
+            self._needs_menu_rebuild = True
         except Exception:
             pass  # Silently fail, don't interrupt monitoring
 

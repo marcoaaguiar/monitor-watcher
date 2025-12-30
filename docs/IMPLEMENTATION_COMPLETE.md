@@ -1,22 +1,30 @@
 # ✅ System Tray Implementation Complete!
 
+> **Note**: This is a historical document. Some files mentioned here have been consolidated:
+> - `tray.py` - Removed (use `uv run python run_cli.py tray` instead)
+> - `tray_demo.py` - Removed (use `--dry-run` flag instead)
+> - `test_profile.py` - Removed (use CLI commands directly)
+
 ## What Was Implemented
 
 ### 🎯 Core Files Created
 
-1. **`tray_app.py`** (254 lines)
+1. **`tray_app.py`** (254 lines) ✅ Still Active
    - Main menu bar application class
    - Profile switching logic
    - Quick input switching
    - Dynamic menu building
    - Error handling with native alerts
+   - USB auto-switch monitoring
+   - Accessed via: `uv run python run_cli.py tray`
 
-2. **`tray.py`** (7 lines)
+2. **`tray.py`** (7 lines) ❌ Removed
    - Entry point to launch the tray app
+   - Consolidated into unified CLI
 
-3. **`tray_demo.py`** (253 lines)
+3. **`tray_demo.py`** (253 lines) ❌ Removed
    - Safe demo version using MockDisplayController
-   - Test the app without affecting real monitors
+   - Use `--dry-run` flag instead: `uv run python run_cli.py apply-profile work --dry-run`
 
 ### 📚 Documentation Created
 
@@ -55,34 +63,34 @@
 
 ## How to Use It
 
-### Option 1: Demo Mode (Recommended First)
+### Option 1: Test Safely First (Recommended)
 
-Test the app safely without affecting your monitors:
+Test profiles safely without affecting your monitors:
 
 ```bash
-uv run python tray_demo.py
+# Dry-run mode - shows what would happen without making changes
+uv run python run_cli.py apply-profile work --dry-run
 ```
 
 This will:
-- Show "Monitor Watcher (DEMO)" in your menu bar
+- Show exactly what changes would be made
 - Use MockDisplayController (safe, no hardware changes)
-- Let you explore all menu features
-- Show notifications for all actions
+- Let you verify your profile configuration
+- No actual monitor switching occurs
 
-**To quit**: Press `Cmd+Q` or select "Quit Demo"
-
-### Option 2: Production Mode
+### Option 2: Launch the Tray App
 
 Run the real app that controls your monitors:
 
 ```bash
-uv run python tray.py
+uv run python run_cli.py tray
 ```
 
 This will:
-- Show "Monitor Watcher" in your menu bar
-- Control real monitors via m1ddc
+- Show "M" icon in your menu bar
+- Control real monitors via m1ddc (macOS) or monitorcontrol (Windows/Linux)
 - Apply profiles and switch inputs
+- Enable USB auto-switching
 - Show success/error notifications
 
 **To quit**: Press `Cmd+Q` or select "Quit"

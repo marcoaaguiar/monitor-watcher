@@ -1,24 +1,60 @@
 # Monitor Watcher
 
-A CLI tool to control monitor inputs on macOS using m1ddc with profile-based configuration.
+A cross-platform CLI tool to control monitor inputs with profile-based configuration. Works on macOS, Windows, and Linux!
+
+## Platform Support
+
+| Platform | Display Control | USB Monitoring | System Tray | Status |
+|----------|----------------|----------------|-------------|---------|
+| **macOS** | m1ddc (Apple Silicon) | system_profiler | rumps (menu bar) | ✅ Fully Supported |
+| **Windows** | monitorcontrol (DDC/CI) | WMI | pystray (coming soon) | ✅ Fully Supported (CLI) |
+| **Linux** | monitorcontrol (DDC/CI) | system info | pystray (coming soon) | ⚠️ Experimental |
 
 ## Prerequisites
 
-- macOS with Apple Silicon (M1/M2/M3)
+### macOS
+- macOS with Apple Silicon (M1/M2/M3/M4)
 - [m1ddc](https://github.com/waydabber/m1ddc) installed: `brew install m1ddc`
 - Python 3.12+
 - [uv](https://github.com/astral-sh/uv) for dependency management
 
+### Windows
+- Windows 10 or Windows 11
+- Python 3.12+
+- [uv](https://github.com/astral-sh/uv) for dependency management
+- Monitors with DDC/CI support (most modern monitors)
+
+### Linux
+- Python 3.12+
+- [uv](https://github.com/astral-sh/uv) for dependency management
+- Monitors with DDC/CI support
+
 ## Installation
 
-### CLI Only
+### macOS
+
 ```bash
+# CLI only
 uv sync
+
+# With menu bar app (recommended)
+uv sync --extra macos
 ```
 
-### With Menu Bar App (Recommended)
+### Windows
+
+```powershell
+# Install and set up dependencies
+uv sync --extra windows
+```
+
+See [docs/WINDOWS_SETUP.md](docs/WINDOWS_SETUP.md) for detailed Windows setup instructions.
+
+### Linux
+
 ```bash
-uv sync --extra tray
+# Install and set up dependencies
+uv sync --extra linux
 ```
 
 ## Quick Start
@@ -38,7 +74,7 @@ uv run python run_cli.py apply-profile work
 ### Menu Bar App 🆕
 ```bash
 # Launch the menu bar app
-uv run python run_tray.py
+uv run python run_cli.py tray
 ```
 
 The "M" icon will appear in your menu bar for quick profile switching!
@@ -251,7 +287,7 @@ uv run python run_cli.py apply-profile personal
 uv run python run_cli.py apply-profile work
 
 # Or use the menu bar app for one-click switching!
-uv run python run_tray.py
+uv run python run_cli.py tray
 ```
 
 ## Project Structure
@@ -259,31 +295,36 @@ uv run python run_tray.py
 ```
 monitor-watcher/
 ├── src/                      # Python source code
-│   ├── main.py              # CLI entry point
-│   ├── cli.py               # CLI commands and user interface
-│   ├── tray.py              # Tray app entry point
-│   ├── tray_app.py          # Menu bar application
-│   ├── tray_demo.py         # Demo tray app (safe testing)
+│   ├── main.py              # CLI entry point (for pip install)
+│   ├── cli.py               # Unified CLI with all commands (including 'tray')
+│   ├── tray_app.py          # Menu bar application (macOS)
 │   ├── controllers.py       # Display controller implementations
+│   │                        #   - M1DDCController (macOS)
+│   │                        #   - WindowsDisplayController (Windows/Linux)
+│   │                        #   - MockDisplayController (testing)
+│   │                        #   - create_display_controller() factory
 │   ├── profile_manager.py   # Profile management and persistence
-│   ├── usb_monitor.py       # USB device monitoring
-│   ├── constants.py         # Application constants
-│   └── test_profile.py      # Profile testing utility
+│   ├── usb_monitor.py       # Cross-platform USB device monitoring
+│   │                        #   - MacOSUSBMonitor (system_profiler)
+│   │                        #   - WindowsUSBMonitor (WMI)
+│   │                        #   - create_usb_monitor() factory
+│   ├── platform_utils.py    # Platform detection utilities
+│   └── constants.py         # Application constants
 ├── docs/                    # Documentation
 │   ├── ARCHITECTURE.md      # Architecture and design decisions
-│   ├── QUICKSTART_TRAY.md   # Quick start guide for tray app
-│   ├── TRAY_SETUP.md        # Detailed tray app setup
+│   ├── QUICKSTART_TRAY.md   # Quick start guide for tray app (macOS)
+│   ├── TRAY_SETUP.md        # Detailed tray app setup (macOS)
 │   ├── TRAY_DESIGN.md       # Tray app design document
 │   ├── USB_MONITORING.md    # USB auto-switch setup guide
-│   ├── AUTOSTART.md         # Auto-start on login setup
-│   └── APP_BUNDLE.md        # Building standalone .app
-├── run_cli.py               # Convenience CLI runner
-├── run_tray.py              # Convenience tray app runner
-├── install_autostart.sh     # Install auto-start on login
-├── uninstall_autostart.sh   # Uninstall auto-start
-├── com.monitor-watcher.app.plist  # LaunchAgent configuration
-├── pyproject.toml           # Project configuration
-├── setup.py                 # py2app build configuration (legacy)
+│   ├── AUTOSTART.md         # Auto-start on login setup (macOS)
+│   ├── WINDOWS_SETUP.md     # Windows setup and usage guide
+│   └── APP_BUNDLE.md        # Building standalone .app (macOS)
+├── run_cli.py               # Unified CLI entry point (includes 'tray' command)
+├── install_autostart.sh     # Install auto-start on login (macOS)
+├── uninstall_autostart.sh   # Uninstall auto-start (macOS)
+├── com.monitor-watcher.app.plist  # LaunchAgent configuration (macOS)
+├── pyproject.toml           # Project configuration (cross-platform)
+├── setup.py                 # py2app build configuration (macOS)
 └── README.md                # This file
 ```
 
@@ -291,12 +332,14 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 
 ## Features
 
-✅ **CLI Interface** - Full command-line control
-✅ **Menu Bar App** - One-click profile switching with "M" icon
+✅ **Cross-Platform** - Works on macOS, Windows, and Linux with automatic platform detection
+✅ **CLI Interface** - Full command-line control on all platforms
+✅ **Menu Bar App** - One-click profile switching with "M" icon (macOS)
 ✅ **Profile Management** - Save and switch between monitor configurations
 ✅ **USB Auto-Switch** - Automatically switch profiles when USB devices connect
-✅ **Auto-Start on Login** - Tray app starts automatically with macOS LaunchAgent
+✅ **Auto-Start on Login** - Tray app starts automatically (macOS with LaunchAgent, Windows coming soon)
 ✅ **Input Checking** - Skips unnecessary switches (no screen blackouts!)
 ✅ **Dry Run Mode** - Test configurations safely
 ✅ **Interactive Wizard** - Easy profile creation
 ✅ **Error Handling** - Clear error messages with detailed debugging info
+✅ **Platform Detection** - Automatically uses the right controller for your OS

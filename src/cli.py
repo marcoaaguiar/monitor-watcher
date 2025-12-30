@@ -8,9 +8,9 @@ from pathlib import Path
 import click
 
 from constants import INPUT_MAP, DEFAULT_CONFIG_PATH, USB_CONFIG_PATH
-from controllers import DisplayController, M1DDCController, MockDisplayController
+from controllers import DisplayController, MockDisplayController, create_display_controller
 from profile_manager import ProfileManager
-from usb_monitor import USBMonitor
+from usb_monitor import create_usb_monitor
 
 
 @click.group()
@@ -25,7 +25,7 @@ def cli() -> None:
 @click.option("--dry-run", is_flag=True, help="Use mock controller for testing")
 def list_monitors(detailed: bool, dry_run: bool) -> None:
     """List all connected monitors."""
-    controller: DisplayController = MockDisplayController() if dry_run else M1DDCController()
+    controller: DisplayController = create_display_controller(dry_run=dry_run)
     output = controller.list_displays(detailed=detailed)
     click.echo(output)
 
@@ -71,7 +71,7 @@ def list_profiles(config: Path) -> None:
 @click.option("--dry-run", is_flag=True, help="Show what would be done without executing")
 def apply_profile(profile_name: str, config: Path, dry_run: bool) -> None:
     """Apply a profile to configure monitor inputs."""
-    controller: DisplayController = MockDisplayController() if dry_run else M1DDCController()
+    controller: DisplayController = create_display_controller(dry_run=dry_run)
     manager = ProfileManager(config)
     manager.apply_profile(profile_name, controller, dry_run)
 
@@ -112,7 +112,7 @@ def switch_input(display: str, input_name: str, dry_run: bool) -> None:
         click.echo(f"Available inputs: {', '.join(INPUT_MAP.keys())}")
         sys.exit(1)
 
-    controller: DisplayController = MockDisplayController() if dry_run else M1DDCController()
+    controller: DisplayController = create_display_controller(dry_run=dry_run)
     input_code = INPUT_MAP[input_name_lower]
     click.echo(f"Switching Display {display} to {input_name.upper()} (code {input_code})...")
     controller.set_input(display, input_code)
@@ -133,7 +133,7 @@ def switch_input(display: str, input_name: str, dry_run: bool) -> None:
 def create_profile_wizard(config: Path) -> None:
     """Interactive wizard to create a new monitor profile."""
     manager = ProfileManager(config)
-    controller = M1DDCController()
+    controller = create_display_controller()
 
     click.echo("=== Monitor Profile Creation Wizard ===\n")
 
@@ -229,7 +229,7 @@ def delete_profile(profile_name: str, config: Path, yes: bool) -> None:
 @cli.command(name="list-usb-devices")
 def list_usb_devices() -> None:
     """List all connected USB devices."""
-    monitor = USBMonitor()
+    monitor = create_usb_monitor()
     devices = monitor.get_all_usb_devices()
 
     if not devices:
@@ -254,7 +254,7 @@ def list_usb_devices() -> None:
 def configure_usb(config: Path) -> None:
     """Configure USB device monitoring for automatic profile switching."""
     manager = ProfileManager(config)
-    monitor = USBMonitor()
+    monitor = create_usb_monitor()
 
     # Get list of USB devices
     devices = monitor.get_all_usb_devices()
@@ -366,4 +366,29 @@ def toggle_usb_monitoring(enabled: str) -> None:
         click.echo("\nRestart the tray app for changes to take effect.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command(name="tray")
+def tray() -> None:
+    """Launch the menu bar/system tray application."""
+    from platform_utils import is_macos
+
+    if is_macos():
+        # macOS: Use rumps-based menu bar app
+        try:
+            from tray_app import MonitorWatcherApp
+            app = MonitorWatcherApp()
+            app.run()
+        except ImportError:
+            click.echo("Error: Tray app dependencies not installed.", err=True)
+            click.echo("Install with: uv sync --extra macos", err=True)
+            sys.exit(1)
+    else:
+        # Windows/Linux: pystray-based system tray (coming soon)
+        click.echo("Error: System tray support is currently macOS-only.", err=True)
+        click.echo("Windows/Linux system tray support coming soon with pystray.", err=True)
+        click.echo("\nFor now, you can use the CLI commands:", err=True)
+        click.echo("  uv run python run_cli.py list-profiles", err=True)
+        click.echo("  uv run python run_cli.py apply-profile <name>", err=True)
         sys.exit(1)

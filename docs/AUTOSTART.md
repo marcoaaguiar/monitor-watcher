@@ -20,7 +20,7 @@ That's it! The tray app will now:
 ## What Gets Installed
 
 The installation script creates a **LaunchAgent** that:
-- Runs `uv run python run_tray.py` on login
+- Runs `uv run python run_cli.py tray` on login
 - Sets the correct working directory
 - Captures all output to log files
 - Keeps the app running with auto-restart
@@ -95,6 +95,8 @@ This will:
 
 You can still run the app manually with:
 ```bash
+uv run python run_cli.py tray
+# Or the legacy command
 uv run python run_tray.py
 ```
 
@@ -120,7 +122,7 @@ uv run python run_tray.py
 4. **Test manual start:**
    ```bash
    cd ~/personal/monitor-watcher
-   uv run python run_tray.py
+   uv run python run_cli.py tray
    ```
 
 ### USB Monitoring Not Working
@@ -182,7 +184,7 @@ The LaunchAgent is a macOS system service that:
 5. **EnvironmentVariables**: Sets up the correct PATH for uv
 
 The plist file tells macOS:
-- What command to run (`uv run python run_tray.py`)
+- What command to run (`uv run python run_cli.py tray`)
 - Where to run it from (`~/personal/monitor-watcher`)
 - Where to log output (`~/.config/monitor-watcher/`)
 - When to restart (on unexpected exit)

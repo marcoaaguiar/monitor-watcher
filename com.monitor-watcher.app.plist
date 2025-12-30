@@ -10,7 +10,8 @@
         <string>/opt/homebrew/bin/uv</string>
         <string>run</string>
         <string>python</string>
-        <string>run_tray.py</string>
+        <string>run_cli.py</string>
+        <string>tray</string>
     </array>
 
     <key>WorkingDirectory</key>
